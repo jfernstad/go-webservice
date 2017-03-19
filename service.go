@@ -32,6 +32,10 @@ type Index struct {
 	EndpointHandler
 }
 
+func (e *Index) GET(w http.ResponseWriter, _ *http.Request) {
+	io.WriteString(w, "{\"msg\":\"GET!\"}\n")
+}
+
 // MyMux is our own special muxer
 type MyMux struct {
 	handlers methodURLHandler
@@ -118,10 +122,11 @@ func indexPOST(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 	fmt.Println("Starting server")
+	idx := Index{EndpointHandler{true, true}}
 	mux := MyMux{}
-	mux.GET("/", printDecorator(jsonDecorator(indexGET)))
-	mux.POST("/", printDecorator(jsonDecorator(indexPOST)))
-	mux.GET("/v1/api", printDecorator(jsonDecorator(indexGET)))
+	mux.GET("/", printDecorator(jsonDecorator(idx.GET)))
+	mux.POST("/", printDecorator(jsonDecorator(idx.POST)))
+	mux.GET("/v1/api", printDecorator(jsonDecorator(idx.GET)))
 	err := http.ListenAndServe(":900", mux)
 	fmt.Printf("Closing with err: %v\n", err)
 
