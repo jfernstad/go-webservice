@@ -83,6 +83,7 @@ type ErrStruct struct {
 
 // httpError is an convenience function
 func httpError(code int, errString string, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	err := json.NewEncoder(w).Encode(ErrStruct{Code: code, Message: errString})
 	if err != nil {
 		io.WriteString(w, fmt.Sprintf("{\"code\":%d,\"message\":\"%s\"}", code, errString))
@@ -96,11 +97,14 @@ type urlHandlerMap map[string]http.HandlerFunc
 type methodURLHandlerMap map[string]urlHandlerMap
 
 // MyMux is our own special muxer
+// All it does is keep track of which endpoints and HTTP methods belong together.
+// Nothig fancy with path matching.
 type MyMux struct {
 	handlers methodURLHandlerMap
 }
 
 // ServeHTTP basic HTTP Handler
+// Register the handler for the proper path and method
 func (m MyMux) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Match Method to stored handlers
 	if urlH := m.handlers[req.URL.Path]; urlH != nil {
@@ -127,7 +131,8 @@ func (m *MyMux) RegisterHandler(method string, path string, h http.HandlerFunc) 
 
 }
 
-// Register takes an instance of a struct (or such) which implements the EndpointMethods interface
+// Register takes an instance of a struct (or such) which implements the EndpointMethods interface.
+// Decorate the handlers properly.
 func (m *MyMux) Register(path string, edph EndpointMethods) {
 	if m.handlers == nil {
 		m.handlers = make(methodURLHandlerMap, 0)
@@ -166,12 +171,12 @@ func (m *MyMux) GET(path string, h http.HandlerFunc) {
 	m.RegisterHandler(http.MethodGet, path, h)
 }
 
-// PUT alias for RegisterHandler w/ GET argument
+// PUT alias for RegisterHandler w/ PUT argument
 func (m *MyMux) PUT(path string, h http.HandlerFunc) {
 	m.RegisterHandler(http.MethodPut, path, h)
 }
 
-// POST alias for RegisterHandler w/ GET argument
+// POST alias for RegisterHandler w/ POST argument
 func (m *MyMux) POST(path string, h http.HandlerFunc) {
 	m.RegisterHandler(http.MethodPost, path, h)
 }
